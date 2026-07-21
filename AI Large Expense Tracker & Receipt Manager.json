@@ -1,0 +1,595 @@
+{
+  "name": "AI Large Expense Tracker & Receipt Manager",
+  "nodes": [
+    {
+      "parameters": {
+        "model": "cohere/north-mini-code:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        672,
+        224
+      ],
+      "id": "569cd90f-85ef-4dd4-9c8f-21bb5c5a6bad",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "QDj45Ha7qs7vErnq",
+          "name": "OpenRouter  Acc"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1PxcNYxPMDeSeWe0F3FzhAylK1GREi0Jo",
+          "mode": "list",
+          "cachedResultName": "Finance/Incoming",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1PxcNYxPMDeSeWe0F3FzhAylK1GREi0Jo"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d1b50190-efed-47b8-9df7-d22bc54c7cc8",
+      "name": "1. New Receipt PDF/Image",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "hBlxLeCCJROTFMgu",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        224,
+        0
+      ],
+      "id": "82ca2864-e2d8-4a85-835d-0178df5698a0",
+      "name": "2. Download file from Receipt",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "hBlxLeCCJROTFMgu",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "1427e337-d700-4684-8c2e-186d2d34a585",
+      "name": "3. Extract from File from downloaded receipt"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze this receipt.\n\n{{$json.text}}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an accounting assistant.\n\nAnalyze the receipt.\n\nReturn ONLY valid JSON.\n\n{\n  \"vendor\":\"\",\n  \"date\":\"\",\n  \"amount\":0,\n  \"currency\":\"\",\n  \"category\":\"\",\n  \"payment_method\":\"\",\n  \"tax\":0,\n  \"summary\":\"\"\n}\n\nRules:\n\n- The summary must NOT copy text directly from the receipt.\n- Generate the summary using the extracted fields.\n- Use the vendor, category, payment method, and amount values.\n- Ignore OCR artifacts, broken words, or unreadable text.\n- Never include malformed text such as \"cta\", \"###\", random symbols, or partial words.\n- Maximum 25 words."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        704,
+        0
+      ],
+      "id": "9792c798-326c-4e91-a3ff-588b8bfd7a67",
+      "name": "4. Receipt Analyzer"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"vendor\":\"string\",\n  \"date\":\"string\",\n  \"amount\":\"number\",\n  \"currency\":\"string\",\n  \"category\":\"string\",\n  \"payment_method\":\"string\",\n  \"tax\":\"number\",\n  \"summary\":\"string\"\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        800,
+        224
+      ],
+      "id": "2f86750b-9123-43f6-ae15-920195093ab3",
+      "name": "5. Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\nconst receipt = item.output;\n\nreceipt.amount = Number(\n  String(receipt.amount)\n    .replace(/[₱,$]/g, \"\")\n    .trim()\n);\n\nreceipt.tax = Number(receipt.tax || 0);\n\nreceipt.category = (receipt.category || \"Other\").trim();\n\nreturn [\n  {\n    json: receipt\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        0
+      ],
+      "id": "a3087036-1709-412b-9e59-2a2c55a2084d",
+      "name": "6. Normalize Values"
+    },
+    {
+      "parameters": {
+        "model": "cohere/north-mini-code:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        880,
+        432
+      ],
+      "id": "dba7ab2c-f0fd-4239-95e8-1ebd23442753",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "QDj45Ha7qs7vErnq",
+          "name": "OpenRouter  Acc"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "14OUGvGurzyRL3WN0j36uGOw8gIcwHRVjNNButVk1VLM",
+          "mode": "list",
+          "cachedResultName": "Expense Tracker",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14OUGvGurzyRL3WN0j36uGOw8gIcwHRVjNNButVk1VLM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Expenses",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14OUGvGurzyRL3WN0j36uGOw8gIcwHRVjNNButVk1VLM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{ $json.date }}",
+            "Vendor": "={{ $json.vendor }}",
+            "Category": "={{ $json.category }}",
+            "Amount": "={{ $json.amount }}",
+            "Currency": "={{ $json.currency }}",
+            "Payment Method": "={{ $json.payment_method }}",
+            "Tax": "={{ $json.tax }}",
+            "Summary": "={{ $json.summary }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Vendor",
+              "displayName": "Vendor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Amount",
+              "displayName": "Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Payment Method",
+              "displayName": "Payment Method",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tax",
+              "displayName": "Tax",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1392,
+        0
+      ],
+      "id": "280217a1-9b89-46f4-b060-63e55a7d3727",
+      "name": "7. Expense Tracker",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OKkqDH11KnvqdjLy",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "55a02171-5e89-4be1-b78d-7eaf1a18dae9",
+              "leftValue": "={{ $json.Amount }}",
+              "rightValue": 5000,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1616,
+        0
+      ],
+      "id": "f7d94e99-2152-4268-b84a-cd385cf9a5e8",
+      "name": "8. Large Expense Detection"
+    },
+    {
+      "parameters": {
+        "chatId": "5518864435",
+        "text": "=💸 Large Expense Detected\n\nVendor:\n{{$json.vendor}}\n\nCategory:\n{{$json.category}}\n\nAmount:\n₱{{$json.amount}}\n\nPayment:\n{{$json.payment_method}}\n\nDate:\n{{$json.date}}\n\nSaved to Google Sheets.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1840,
+        -96
+      ],
+      "id": "517c2a1e-e7c3-4f12-9c9b-f04a280f4b9d",
+      "name": "9. Notifiy Large Expenses",
+      "webhookId": "4d7aca7f-0e21-467c-bd33-08c59a3cb995",
+      "credentials": {
+        "telegramApi": {
+          "id": "2m2ZAnossYlxodgQ",
+          "name": "AI Expense Tracker & Receipt Manager"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "beliosinangote2@gmail.com",
+        "subject": "Large Expense Alert",
+        "emailType": "text",
+        "message": "=A large expense has been detected.\n\nVendor:\n{{$json.vendor}}\n\nCategory:\n{{$json.category}}\n\nAmount:\n₱{{$json.amount}}\n\nTax:\n₱{{$json.tax}}\n\nPayment:\n{{$json.payment_method}}\n\nDate:\n{{$json.date}}\n\nSummary:\n{{$json.summary}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2064,
+        -96
+      ],
+      "id": "1a300759-863b-453b-b741-a61df8426a50",
+      "name": "10. Notify Large Expenses",
+      "webhookId": "3b7bf51d-f8dd-4f14-b465-0c65cdb05b45",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "jLxWaRUIVsLiAsVq",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "fileId": {
+          "__rl": true,
+          "value": "={{$node[\"1. New Receipt PDF/Image\"].json.id}}",
+          "mode": "id"
+        },
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1sfrd4pBeDHBLk1rzXNs_nVOwUWsi6G4d",
+          "mode": "list",
+          "cachedResultName": "Finance/Processed",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1sfrd4pBeDHBLk1rzXNs_nVOwUWsi6G4d"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2288,
+        -96
+      ],
+      "id": "25f86556-1797-44ee-986b-86712014d7ef",
+      "name": "11. Move file to finance/Processed",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "hBlxLeCCJROTFMgu",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "fileId": {
+          "__rl": true,
+          "value": "={{$node[\"1. New Receipt PDF/Image\"].json.id}}",
+          "mode": "id"
+        },
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1sfrd4pBeDHBLk1rzXNs_nVOwUWsi6G4d",
+          "mode": "list",
+          "cachedResultName": "Finance/Processed",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1sfrd4pBeDHBLk1rzXNs_nVOwUWsi6G4d"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1840,
+        96
+      ],
+      "id": "c9e3a1d0-eb2c-4ddf-963e-1a9ab0440c54",
+      "name": "12. Move file to Finance/Processed",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "hBlxLeCCJROTFMgu",
+          "name": "Google Drive account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "4. Receipt Analyzer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. New Receipt PDF/Image": {
+      "main": [
+        [
+          {
+            "node": "2. Download file from Receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Download file from Receipt": {
+      "main": [
+        [
+          {
+            "node": "3. Extract from File from downloaded receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Extract from File from downloaded receipt": {
+      "main": [
+        [
+          {
+            "node": "4. Receipt Analyzer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "4. Receipt Analyzer",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Receipt Analyzer": {
+      "main": [
+        [
+          {
+            "node": "6. Normalize Values",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "5. Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6. Normalize Values": {
+      "main": [
+        [
+          {
+            "node": "7. Expense Tracker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7. Expense Tracker": {
+      "main": [
+        [
+          {
+            "node": "8. Large Expense Detection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "8. Large Expense Detection": {
+      "main": [
+        [
+          {
+            "node": "9. Notifiy Large Expenses",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "12. Move file to Finance/Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "9. Notifiy Large Expenses": {
+      "main": [
+        [
+          {
+            "node": "10. Notify Large Expenses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10. Notify Large Expenses": {
+      "main": [
+        [
+          {
+            "node": "11. Move file to finance/Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "17b11430-0460-4063-9ccd-7836a707e6a7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "nodeGroups": [],
+  "id": "t5QBfVyyEtn2bkUu",
+  "tags": []
+}
