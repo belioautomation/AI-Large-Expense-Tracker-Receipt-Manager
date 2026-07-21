@@ -163,6 +163,7 @@ AI-Large-Expense-Tracker-Receipt-Manager/
 ├── docs/
 │   ├── architecture.png          # Workflow architecture
 │   └── workflow.png              # n8n workflow screenshot
+│   └── workflow-demo.webm        # n8n workflow demo
 │
 ├── prompts/
 │   └── receipt-analysis.md       # AI prompt
