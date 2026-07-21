@@ -1,9 +1,15 @@
 # 🎬 AI Large Expense Tracker & Receipt Manager
 
-![GitHub stars](https://img.shields.io/github/stars/belioautomation/AI-Large-Expense-Tracker-Receipt-Manager?style=for-the-badge)
-![GitHub forks](https://img.shields.io/github/forks/belioautomation/AI-Large-Expense-Tracker-Receipt-Manager?style=for-the-badge)
-![GitHub last commit](https://img.shields.io/github/last-commit/belioautomation/AI-Large-Expense-Tracker-Receipt-Manager?style=for-the-badge)
-![GitHub repo size](https://img.shields.io/github/repo-size/belioautomation/AI-Large-Expense-Tracker-Receipt-Manager?style=for-the-badge)
+![Project](https://img.shields.io/badge/Project-AI%20Large%20Expense%20Tracker-blue?style=for-the-badge)
+![Automation](https://img.shields.io/badge/Automation-n8n-EA4B71?style=for-the-badge&logo=n8n&logoColor=white)
+![AI Powered](https://img.shields.io/badge/AI-Powered-purple?style=for-the-badge)
+![OCR](https://img.shields.io/badge/OCR-Receipt%20Extraction-5C6BC0?style=for-the-badge)
+![Google Gemini](https://img.shields.io/badge/Google%20Gemini-AI-8E75FF?style=for-the-badge&logo=google&logoColor=white)
+![Google Sheets](https://img.shields.io/badge/Google%20Sheets-Logging-34A853?style=for-the-badge&logo=googlesheets&logoColor=white)
+![Telegram](https://img.shields.io/badge/Telegram-Alert-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)
+![Gmail](https://img.shields.io/badge/Gmail-Notification-EA4335?style=for-the-badge&logo=gmail&logoColor=white)
+![Conditional Routing](https://img.shields.io/badge/Workflow-Conditional%20Routing-orange?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
 An AI-powered expense automation workflow built with **n8n** that automatically processes receipts, extracts expense details using AI, stores structured expense records in Google Sheets, detects large expenses, sends real-time notifications, and archives processed receipts in Google Drive.
 
